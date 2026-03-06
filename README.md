@@ -8,12 +8,22 @@ Built with **Apache Airflow 3.x** (Astro Runtime 3.1) and the TaskFlow API.
 
 ## Architecture
 
+The full, styled diagram is available in `etl_architecture.html` in this repository. A simplified Mermaid overview is shown below for quick reference.
+
 ```mermaid
-graph TD
-    A[Extract: Coinbase WebSocket Ticker Stream] --> B[Validate: Schema Validation]
-    B --> C[Transform: Add Metadata (_ingested_at, _execution_date)]
-    C --> D[Load: Store Valid Records]
-    D --> E[Airflow DAG: Schedule and Orchestrate]
+flowchart TD
+    Source["Coinbase WebSocket API"]
+    Extract["Extract — extract.py"]
+    Validate["Validate — validate.py"]
+    Transform["Transform — transform.py"]
+    Load["Load — load.py"]
+    Orchestration["Airflow DAG (orchestrates)"]
+
+    Source --> Extract --> Validate --> Transform --> Load
+    Orchestration -.-> Extract
+    Orchestration -.-> Validate
+    Orchestration -.-> Transform
+    Orchestration -.-> Load
 ```
 
 ### Explanation of ETL Steps

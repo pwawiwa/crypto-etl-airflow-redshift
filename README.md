@@ -26,6 +26,14 @@ flowchart TD
     Orchestration -.-> Load
 ```
 
+### Diagrams
+
+Click to open full-size images:
+
+![Architecture](imgs/Screenshot%202026-03-06%20at%2015.38.29.png)
+
+![Pipeline](imgs/Screenshot%202026-03-06%20at%2015.55.54.png)
+
 ### Explanation of ETL Steps
 
 1. **Extract**: Connects to the Coinbase WebSocket API to stream real-time ticker data. This ensures we capture the latest market data efficiently.
@@ -231,15 +239,6 @@ docker build -t coinbase-stream .
 docker run --env-file .env coinbase-stream python include/streaming_ingestion.py
 ```
 
-### 6. Launch the Dashboard
-
-```bash
-pip install streamlit plotly websocket-client
-streamlit run include/dashboard.py
-```
-
-Open **http://localhost:8501** to see live prices, OHLC charts, spread analysis, and volatility gauges.
-
 ---
 
 ## Redshift Setup (Optional)
@@ -275,20 +274,6 @@ Create an IAM role for Redshift COPY and update the ARN in `etls/load.py`.
 
 ---
 
-## Running Tests
-
-```bash
-# Install test dependencies
-pip install -r requirements.txt
-
-# Run all tests
-pytest tests/ -v
-
-# Run specific test modules
-pytest tests/test_transform.py -v
-pytest tests/test_validate.py -v
-```
-
 ---
 
 ## Configuration Reference
@@ -310,19 +295,6 @@ All configuration is in `include/config.py`, driven by `.env`:
 
 ---
 
-## Next Steps / Production Checklist
-
-1. **Secrets management:** Move from `.env` to AWS Secrets Manager or Airflow Connections
-2. **IAM roles:** Use instance profiles / IRSA instead of access keys
-3. **Monitoring:** Add Airflow alerting (email/Slack on failure), CloudWatch metrics
-4. **Data quality:** Add Great Expectations or Soda checks as DAG tasks
-5. **Partitioning:** Add hourly partitions for high-volume products
-6. **Schema evolution:** Version the JSON schemas, add migration logic
-7. **CI/CD:** Add GitHub Actions to run tests + `astro deploy`
-8. **Cost optimisation:** Use S3 Intelligent-Tiering, Redshift RA3 with managed storage
-9. **Scaling:** Move streaming ingestion to AWS ECS/Fargate with auto-scaling
-10. **dbt:** Add dbt models on top of Redshift for marts (OHLC, spreads, volume)
-
 ---
 
 ## Tech Stack
@@ -333,7 +305,7 @@ All configuration is in `include/config.py`, driven by `.env`:
 | Data Source | Coinbase Advanced Trade WebSocket API |
 | Storage | AWS S3 (Parquet + JSONL) |
 | Warehouse | Amazon Redshift |
-| Dashboard | Streamlit + Plotly |
+<!-- Dashboard removed: see architecture images for visualizations -->
 | Validation | jsonschema |
 | Language | Python 3.12 |
 

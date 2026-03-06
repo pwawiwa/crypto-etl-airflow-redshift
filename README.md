@@ -30,9 +30,14 @@ flowchart TD
 
 Click to open full-size images:
 
-![Architecture](imgs/Screenshot%202026-03-06%20at%2015.38.29.png)
-
-![Pipeline](imgs/Screenshot%202026-03-06%20at%2015.55.54.png)
+<div style="display:flex; gap:1rem; align-items:flex-start;">
+    <a href="imgs/airflow_dags_tree_view.png">
+        <img src="imgs/airflow_dags_tree_view.png" alt="Airflow DAGs tree view" style="width:48%; border-radius:8px; border:1px solid #e5e7eb;" />
+    </a>
+    <a href="imgs/redshift_datawarehouse.png">
+        <img src="imgs/redshift_datawarehouse.png" alt="Redshift data warehouse" style="width:48%; border-radius:8px; border:1px solid #e5e7eb;" />
+    </a>
+</div>
 
 ### Explanation of ETL Steps
 

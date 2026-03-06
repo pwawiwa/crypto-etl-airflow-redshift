@@ -1,0 +1,52 @@
+
+
+## Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+.mypy_cache/
+.pytest_cache/
+
+## IDEs
+.idea/
+.vscode/
+.DS_Store
+
+## Airflow
+airflow.db
+airflow.cfg
+logs/
+tmp/
+webserver_config.py
+$/airflow/*
+
+## AWS
+.aws/credentials
+.aws/config
+*.pem
+
+## Packaging
+*.egg-info/
+*.egg
+*.dist-info/
+
+## Node / Build
+node_modules/
+dist/
+
+## Misc
+*.sqlite3
+.cache/
+coverage/.git
+
+.DS_Store
+airflow_settings.yaml
+__pycache__/
+astro
+.venv
+airflow-webserver.pid
+webserver_config.py
+airflow.cfg
+airflow.db

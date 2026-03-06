@@ -1,0 +1,32 @@
+# Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
+
+# --- AWS ---
+boto3>=1.35.0
+apache-airflow-providers-amazon>=9.0.0
+
+# --- Data Processing ---
+pandas>=2.2.0
+pyarrow>=17.0.0
+numpy>=1.26.0
+
+# --- WebSocket ---
+websocket-client>=1.8.0
+
+# --- Schema Validation ---
+jsonschema>=4.23.0
+
+# --- Config ---
+python-dotenv>=1.0.1
+
+# --- Warehouse ---
+psycopg2-binary>=2.9.9
+
+# --- Dashboard ---
+streamlit>=1.38.0
+plotly>=5.24.0
+
+# --- Testing ---
+pytest>=8.3.0
+
+# --- Date/Time ---
+pendulum>=2.1.2

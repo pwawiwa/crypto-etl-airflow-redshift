@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coinbase ETL — Architecture &amp; Design Rationale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#4F46E5',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#3730A3',
+                lineColor: '#6366F1',
+                secondaryColor: '#F0ABFC',
+                tertiaryColor: '#E0E7FF',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                fontSize: '14px',
+                nodeBorder: '#3730A3',
+                clusterBkg: '#F8FAFC',
+                clusterBorder: '#CBD5E1',
+                edgeLabelBackground: '#ffffff',
+                nodeTextColor: '#1E1B4B'
+            },
+            flowchart: {
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 30,
+                rankSpacing: 50
+            }
+        });
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            color: #1E293B;
+            background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F8FAFC 100%);
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1E1B4B;
+            margin-bottom: .5rem;
+        }
+        .subtitle {
+            color: #6366F1;
+            font-size: .95rem;
+            font-weight: 500;
+            margin-bottom: 2.5rem;
+        }
+        h2 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #312E81;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        h2 .icon { font-size: 1.4rem; }
+
+        .card {
+            background: #fff;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            margin: 1.2rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.03);
+            transition: box-shadow .2s;
+        }
+        .card:hover { box-shadow: 0 4px 20px rgba(99,102,241,.12); }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            padding: 1rem 0;
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+        }
+        th {
+            background: linear-gradient(135deg, #4F46E5, #6366F1);
+            color: #fff;
+            padding: .85rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: .85rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        td {
+            padding: .75rem 1rem;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: .9rem;
+            line-height: 1.55;
+            vertical-align: top;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) { background: #FAFAFF; }
+        tr:hover { background: #EEF2FF; }
+        td:first-child { font-weight: 600; color: #4338CA; white-space: nowrap; }
+        code {
+            background: #EEF2FF;
+            color: #4338CA;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: .82em;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        pre {
+            background: #1E1B4B;
+            color: #E0E7FF;
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-size: .85rem;
+            line-height: 1.6;
+        }
+        pre code { background: none; color: inherit; padding: 0; }
+        .json-key { color: #A5B4FC; }
+        .json-str { color: #86EFAC; }
+        .json-num { color: #FCD34D; }
+
+        .steps {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+        .steps li {
+            counter-increment: step;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: .85rem 0;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        .steps li:last-child { border-bottom: none; }
+        .steps li::before {
+            content: counter(step);
+            flex-shrink: 0;
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: .8rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .03em;
+            vertical-align: middle;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: .3rem;
+        }
+        .header-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-icon">&#9889;</div>
+    <div>
+        <h1>Coinbase WebSocket ETL</h1>
+        <div class="subtitle">Architecture &amp; Design Rationale &nbsp;<span class="badge">Airflow 3.x</span></div>
+    </div>
+</div>
+
+<!-- ============================================================= -->
+<h2><span class="icon">&#128640;</span> End-to-End Pipeline</h2>
+<div class="card">
+    <div class="mermaid">
+    graph LR
+        subgraph Source["&#127760; Source"]
+            CB["&#128176; Coinbase WebSocket API"]
+        end
+
+        subgraph Extract["&#128229; Extract &lpar;extract.py&rpar;"]
+            CONN["Connect via WSS"]
+            SUB["Subscribe to ticker"]
+            RECV["Receive JSON stream"]
+        end
+
+        subgraph Validate["&#9989; Validate &lpar;validate.py&rpar;"]
+            SCHEMA["Schema Check: TICKER_RAW_SCHEMA"]
+        end
+
+        subgraph Transform["&#128295; Transform &lpar;transform.py&rpar;"]
+            META["Enrich metadata"]
+            CAST["Type cast &amp; normalize"]
+            AGG["Analytics enrichments"]
+        end
+
+        subgraph Load["&#9729; Load &lpar;load.py&rpar;"]
+            S3["AWS S3 — Parquet"]
+            RS["Amazon Redshift"]
+        end
+
+        subgraph Orchestration["&#9881; Orchestration"]
+            DAG["Airflow 3.x DAG"]
+        end
+
+        CB -->|wss://| CONN
+        CONN --> SUB --> RECV
+        RECV --> SCHEMA
+        SCHEMA -->|valid| META
+        META --> CAST --> AGG
+        AGG --> S3
+        S3 -->|COPY| RS
+        DAG -.->|orchestrates| CONN
+        DAG -.->|orchestrates| SCHEMA
+        DAG -.->|orchestrates| AGG
+        DAG -.->|orchestrates| S3
+    </div>
+</div>
+
+<!-- ============================================================= -->
+<h2><span class="icon">&#128161;</span> Reasoning Behind Every Step</h2>
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+        <thead>
+            <tr><th>Step</th><th>What It Does</th><th>Why It Exists</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1. Connect via WSS</td>
+                <td>Opens a secure WebSocket connection to the Coinbase Advanced Trade API.</td>
+                <td>WebSocket provides low-latency, push-based streaming — far more efficient than polling a REST endpoint for real-time ticker data.</td>
+            </tr>
+            <tr>
+                <td>2. Subscribe to Ticker</td>
+                <td>Sends a JSON subscribe message for configured products (BTC-USD, ETH-USD, …).</td>
+                <td>Coinbase requires explicit subscription within 5 s of connecting. Centralising the product list in config makes it easy to add/remove pairs without code changes.</td>
+            </tr>
+            <tr>
+                <td>3. Receive (Time-Bounded)</td>
+                <td>Reads messages for exactly <code>STREAM_DURATION_SECONDS</code> (default 60 s).</td>
+                <td>Makes every Airflow run <strong>idempotent</strong> — each execution captures a fixed window of data tagged with the logical date, so re-runs don't duplicate or miss data.</td>
+            </tr>
+            <tr>
+                <td>4. Schema Validation</td>
+                <td>Each incoming message is validated against <code>TICKER_RAW_SCHEMA</code>.</td>
+                <td>Prevents malformed or unexpected upstream changes from corrupting the data lake. Invalid records are logged and dropped early.</td>
+            </tr>
+            <tr>
+                <td>5. Metadata Enrichment</td>
+                <td>Adds <code>_ingested_at</code> (UTC timestamp) and <code>_execution_date</code> (Airflow logical date).</td>
+                <td><code>_ingested_at</code> enables latency analysis. <code>_execution_date</code> supports S3 partition pruning and Redshift <code>WHERE</code> filters for efficient queries.</td>
+            </tr>
+            <tr>
+                <td>6. Type Casting</td>
+                <td>Converts string prices/volumes to <code>Decimal</code>; normalises timestamps to UTC.</td>
+                <td>Coinbase sends all numbers as strings. <code>Decimal</code> prevents floating-point rounding in financial calculations.</td>
+            </tr>
+            <tr>
+                <td>7. Analytics Enrichment</td>
+                <td>Computes derived columns: spread, mid-price, 24 h change %, OHLC.</td>
+                <td>Pre-computing commonly needed metrics reduces Redshift compute costs and keeps analytics layers thin.</td>
+            </tr>
+            <tr>
+                <td>8. Store to S3</td>
+                <td>Writes partitioned Parquet files under <code>s3://bucket/transformed/</code>.</td>
+                <td>Parquet offers columnar compression (~10x vs JSON) and predicate push-down. Partition by date enables cheap, targeted reads.</td>
+            </tr>
+            <tr>
+                <td>9. Load into Redshift</td>
+                <td>Uses <code>COPY</code> from S3 into Redshift Serverless.</td>
+                <td><code>COPY</code> is massively parallel and the fastest bulk-load method. Serverless auto-scales so cost tracks actual usage.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ============================================================= -->
+<h2><span class="icon">&#128196;</span> Sample Output</h2>
+<div class="card" style="padding: 0; overflow: hidden;">
+    <pre><code>{
+  <span class="json-key">"type"</span>:            <span class="json-str">"ticker"</span>,
+  <span class="json-key">"product_id"</span>:      <span class="json-str">"BTC-USD"</span>,
+  <span class="json-key">"price"</span>:           <span class="json-str">"67432.10"</span>,
+  <span class="json-key">"best_bid"</span>:        <span class="json-str">"67430.50"</span>,
+  <span class="json-key">"best_ask"</span>:        <span class="json-str">"67433.70"</span>,
+  <span class="json-key">"volume_24h"</span>:      <span class="json-str">"12345.678"</span>,
+  <span class="json-key">"time"</span>:            <span class="json-str">"2026-03-06T15:13:20.123456Z"</span>,
+  <span class="json-key">"_ingested_at"</span>:    <span class="json-str">"2026-03-06T15:13:20.456789+00:00"</span>,
+  <span class="json-key">"_execution_date"</span>: <span class="json-str">"2026-03-06"</span>,
+  <span class="json-key">"_spread"</span>:         <span class="json-num">3.20</span>,
+  <span class="json-key">"_mid_price"</span>:      <span class="json-num">67432.10</span>,
+  <span class="json-key">"_24h_change_pct"</span>: <span class="json-num">1.42</span>
+}</code></pre>
+</div>
+
+<!-- ============================================================= -->
+<h2><span class="icon">&#9654;</span> How to Run</h2>
+<div class="card">
+    <ol class="steps">
+        <li><div><strong>Set up environment</strong> — Copy <code>.env.example</code> &rarr; <code>.env</code> and fill in AWS / Redshift credentials.</div></li>
+        <li><div><strong>Start Airflow</strong> — <code>astro dev start</code></div></li>
+        <li><div><strong>Trigger the DAG</strong> — Open <a href="http://localhost:8080" style="color:#4F46E5;">localhost:8080</a>, find <code>coinbase_ticker_etl</code>, and toggle it on or trigger manually.</div></li>
+        <li><div><strong>Monitor</strong> — Check task logs in the Airflow UI for debugging and performance monitoring.</div></li>
+    </ol>
+</div>
+
+</body>
+</html>

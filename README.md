@@ -150,18 +150,18 @@ extract_coinbase_stream → store_raw_s3
 
 ## Analytical Insights This Dataset Provides
 
-### 📊 Crypto Market Volatility
+### Crypto Market Volatility
 - **Rolling volatility** calculated from tick-level price returns reveals intraday volatility regimes
 - **OHLC candles** feed Garman-Klass and Parkinson volatility estimators that are 5-8× more efficient than close-to-close methods
 - **Use case:** Risk management, position sizing, options pricing, VaR models
 
-### 📈 Bid-Ask Spread Analysis
+### Bid-Ask Spread Analysis
 - **Spread time-series** reveals liquidity patterns — tighter spreads during US market hours, wider during Asian hours
 - **Spread percentage** enables cross-asset comparison (is BTC more liquid than SOL today?)
 - **Sudden spread widening** flags market stress events, exchange outages, or flash crashes
 - **Use case:** Execution-cost estimation, market-microstructure research, algorithmic trading
 
-### ⚡ Trading Activity Spikes
+### Trading Activity Spikes
 - **Volume per minute** detects abnormal trading bursts — often precursors to large price moves
 - **Trade count vs. volume** distinguishes retail flurries (many small trades) from institutional activity (few large blocks)
 - **Side imbalance** (buy vs. sell volume) signals directional pressure before it shows up in price
